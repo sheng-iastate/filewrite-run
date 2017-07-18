@@ -72,10 +72,12 @@ EOF
 		echo " -- NO DBWRITE"
 	fi
 
-	echo "Sleeping for $POSTDELAY"
-	sleep $POSTDELAY
 	echo "Deleting file $FILENAME"
 	rm $FILENAME
+
+
+	echo "Sleeping for $POSTDELAY"
+	sleep $POSTDELAY
 	echo "Done"
 	echo ""
 done
