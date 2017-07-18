@@ -42,8 +42,8 @@ while true
 do
 	DELAY=$RANDOM
 
-	let delay=delay%60
-	let postDelay=60-delay
+	let DELAY=DELAY%60
+	let POSTDELAY=60-delay
 	#let DELAY=DELAY%5
 	#let POSTDELAY=5-DELAY
 
