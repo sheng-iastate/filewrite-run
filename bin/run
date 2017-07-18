@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+
+RUNEXEC=$(printenv RUNEXEC)
+
+if [ -z "$RUNEXEC" ]
+then
+	while true
+	do
+		echo "Not Executing"
+		sleep 60
+	done
+fi
+
+
+
+RUNNAME=$(printenv RUNNAME)
+if [ -z "$RUNNAME" ]
+then
+	RUNNAME="Default Run"
+fi
+
+FILEDIR=$(printenv RUNFILEDIR)
+FILENAME="file.$RANDOM"
+
+if [ -n "$FILEDIR" ]
+then
+	FILENAME="$FILEDIR/file.$RANDOM"
+fi
+
+# not secure, but again quick and dirty
+DBHOST=$(printenv DBHOST)
+DBUSER=$(printenv DBUSER)
+DBPASSWD=$(printenv DBPASSWD)
+DBNAME=$(printenv DBNAME)
+PODS=$(printenv PODS)
+if [ -z "$PODS" ]
+then
+	PODS="-1"
+fi
+
+while true
+do
+	DELAY=$RANDOM
+
+	let delay=delay%60
+	let postDelay=60-delay
+	#let DELAY=DELAY%5
+	#let POSTDELAY=5-DELAY
+
+	#echo $RUNNAME
+
+	echo "Sleeping for $DELAY"
+	sleep $DELAY
+
+	echo "Creating file $FILENAME"
+
+	EXECTIME=$(time ( dd if=/dev/urandom of=$FILENAME bs=1048576 count=1 > /dev/null 2>&1)  2>&1 )
+
+	REALTIME=$(echo $EXECTIME | cut -f 2 -d " ")
+	REALTIMEMIN=$(echo $REALTIME | cut -f 1 -d "m")
+	REALTIMESEC=$(echo $REALTIME | cut -f 2 -d "m" | cut -f 1 -d "s")
+
+	REALTIMECOMBINED=$( echo "$REALTIMEMIN * 60 + $REALTIMESEC" | bc )
+
+
+	if [ -n "$DBHOST" ] && [ -n "$DBUSER" ] && [ -n "$DBPASSWD" ] && [ -n "$DBNAME" ]
+	then
+	mysql  --silent --host=$DBHOST --user=$DBUSER --password=$DBPASSWD $DBNAME > /dev/null 2>&1 << EOF
+		INSERT INTO os_filewrites (run, real_time_string, real_time_seconds, pods ) VALUES ("$RUNNAME", "$REALTIME", "$REALTIMECOMBINED", "$PODS");
+EOF
+	else
+		echo " -- NO DBWRITE"
+	fi
+
+	echo "Sleeping for $POSTDELAY"
+	sleep $POSTDELAY
+	echo "Deleting file $FILENAME"
+	rm $FILENAME
+	echo "Done"
+	echo ""
+done
